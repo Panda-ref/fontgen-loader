@@ -3,6 +3,10 @@ var fontgen = require("webfonts-generator");
 var path = require("path");
 var glob = require('glob');
 
+var _ = require('underscore');
+var handlebars = require('handlebars');
+var fs = require('fs');
+
 var mimeTypes = {
     'eot': 'application/vnd.ms-fontobject',
     'svg': 'image/svg+xml',
@@ -62,7 +66,6 @@ function getFilesAndDeps(patterns, context) {
 }
 
 module.exports = function (content) {
-    this.cacheable();
     var params = loaderUtils.parseQuery(this.query);
     var config;
     try {
@@ -87,7 +90,7 @@ module.exports = function (content) {
     config.files = filesAndDeps.files;
 
     // With everything set up, let's make an ACTUAL config.
-    var formats = params.types || ['eot', 'woff', 'ttf', 'svg'];
+    var formats = params.types || config.types || ['eot', 'woff', 'ttf', 'svg'];
     if (formats.constructor !== Array) {
         formats = [formats];
     }
@@ -138,9 +141,10 @@ module.exports = function (content) {
     var self = this;
     var opts = this.options;
     var pub = (
-      opts.output.publicPath || "/"
+        opts.output.publicPath || "/"
     );
     var embed = !!params.embed;
+    var html = !!params.html || config.html;
 
     if (fontconf.cssTemplate) {
         this.addDependency(fontconf.cssTemplate)
@@ -151,29 +155,71 @@ module.exports = function (content) {
             return cb(err);
         }
         var urls = {};
+        var hasSvg = !!~formats.indexOf('svg');
         for (var i in formats) {
             var format = formats[i];
+            var url;
+
             if (!embed) {
                 var filename = config.fileName || params.fileName || "[hash]-[fontname][ext]";
                 filename = filename
-                  .replace("[fontname]", fontconf.fontName)
-                  .replace("[ext]", "." + format);
-                var url = loaderUtils.interpolateName(this,
-                  filename,
-                  {
-                      context: self.options.context || this.context,
-                      content: res[format]
-                  }
-                );
-                urls[format] = path.join(pub, url).replace(/\\/g, '/');
+                    .replace(/\[fontname\]/gi, fontconf.fontName)
+                    .replace(/\[ext\]/gi, format);
+
+                if (hasSvg) {
+                    url = loaderUtils.interpolateName(this,
+                        filename,
+                        {
+                            context: self.options.context || this.context,
+                            content: res['svg']
+                        }
+                    );
+                } else {
+                    url = loaderUtils.interpolateName(this,
+                        filename,
+                        {
+                            context: self.options.context || this.context,
+                            content: res[format]
+                        }
+                    );
+                }
+                urls[format] = (pub + url).replace(/\\/g, '/');
                 self.emitFile(url, res[format]);
             } else {
                 urls[format] = 'data:'
-                  + mimeTypes[format]
-                  + ';charset=utf-8;base64,'
-                  + (new Buffer(res[format]).toString('base64'));
+                    + mimeTypes[format]
+                    + ';charset=utf-8;base64,'
+                    + (new Buffer(res[format]).toString('base64'));
             }
         }
-        cb(null, res.generateCss(urls));
+
+        var styles = res.generateCss(urls);
+
+        if (html) {
+            var source = fs.readFileSync(fontgen.templates.html, 'utf8');
+            var template = handlebars.compile(source);
+            var names = fontconf.files.map(function(file) {
+                return path.basename(file, path.extname(file))
+            });
+            var ctx = _.extend({
+                names: names,
+                fontName: fontconf.fontName,
+                styles: styles
+            }, fontconf.templateOptions);
+            var content = template(ctx);
+            var htmlFileName = config.htmlFileName
+                .replace(/\[fontname\]/gi, fontconf.fontName)
+                .replace(/\[ext\]/gi, format);
+            var htmlFileUrl = loaderUtils.interpolateName(this,
+                htmlFileName,
+                {
+                    context: self.options.context || this.context,
+                    content: content
+                }
+            );
+            self.emitFile(htmlFileUrl, content);
+        }
+
+        cb(null, styles);
     });
 };
