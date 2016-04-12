@@ -198,9 +198,7 @@ module.exports = function (content) {
         if (html) {
             var source = fs.readFileSync(fontgen.templates.html, 'utf8');
             var template = handlebars.compile(source);
-            var names = fontconf.files.map(function(file) {
-                return path.basename(file, path.extname(file))
-            });
+            var names = fontconf.files.map(fontconf.rename);
             var ctx = _.extend({
                 names: names,
                 fontName: fontconf.fontName,
