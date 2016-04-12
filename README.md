@@ -7,7 +7,7 @@ What a mess! Okay okay, so what do we do? We make our own. And how? ...good ques
 ## How `fontgen-loader` works.
 There is a tool that lets us generate fonts automaticaly by a configuration. The font is created by putting several SVG icons together and generating the proper file(s). That includes:
 
-- A font file for WOF, EOT, TTF and WOFF2. Also SVG, if you want. But there is a trend of removal withinb rowsers - you can see more on [caniuse](http://caniuse.com).
+- A font file for WOF, EOT, TTF and WOFF2. Also SVG, if you want. But there is a trend of removal within browsers - you can see more on [caniuse](http://caniuse.com).
 - A CSS has your font configured. That means, it's a proper `@font-face` declaration inclusive icon classes.
 - If you want, a HTML demo page.
 
@@ -20,8 +20,8 @@ module.exports = {
     resolve: {
         loaders: [
             {
-                test: /\.font.(js|json)$/,
-                loader: "style!css!fontgen?types=woff,eot,ttf"
+                test: /\.font\.(js|json)$/,
+                loader: "style!css!fontgen"
             }
         ]
     }
@@ -45,19 +45,31 @@ Now, the loader will load in the font from the given configuration, and the CSS 
 
 Example:
 
-```json
-{
+module style
+```javascript
+module.exports = {
     "files": [
-        "icon/my.svg",
-        "icon/awesome.svg",
-        "icon/stuff.svg"
-    ],
+            "icon/my.svg",
+            "icon/awesome.svg",
+            "icon/stuff.svg",
+            "icon/special/*.svg" // glob style
+        ],
     "fontName": "Awesomecons",
     "classPrefix": "ai-",
     "baseClass": "ai",
-    "fixedWidth": true
+    "fixedWidth": true,
+    "types": ["eot", "woff", "ttf", "svg"] // this is the default
 }
 ```
+
+or .json (content should be an object)
+```json
+{
+    "files": []
+}
+```
+
+
 
 Now, the loader will pick up this config, pull it through the generator and:
 
@@ -66,8 +78,11 @@ Now, the loader will pick up this config, pull it through the generator and:
 
 And there you are - your webfont is done. Now, here is one thing: You can use JavaScript too. A useful thing is, that there are two additional options that I did not mention:
 
+In addition, you also have these options:
+
 - `.rename`: This should be a function that returns the icon's name based on the input (filename).
 - `.log`: You can log stuff here.
+- `.formatOptions`: An object containing options to their specific transformers. See [this PR](https://github.com/sunflowerdeath/webfonts-generator/pull/6) and [this README entry](https://github.com/sunflowerdeath/webfonts-generator#formatoptions) to learn more.
 
 You also can use a module like `glob` to pick up a variable set of icons, too. Mix and match and mind the various licenses - and make your own webfont!
 
@@ -75,11 +90,8 @@ You also can use a module like `glob` to pick up a variable set of icons, too. M
 # Configuration
 ## Loader parameters
 
-- `types`, Array
-Possible values are: `["svg", "eot", "wof", "ttf"]`.
-
 - `template`, String
-Which template to use? By default, a CSS one is used. The template is to be processed by Handlebars. See [the generator](https://github.com/nfroidure/svgicons2svgfont)'s readme itself for more info.
+Which template to use? By default, a CSS one is used. The template is to be processed by Handlebars. See [the generator](https://github.com/sunflowerdeath/webfonts-generator)'s readme itself for more info.
 
 - `embed`, Boolean
 Should the fonts be embedded in the CSS? By default the fonts are written to disk. If `embed` is specified the font is base64 encoded and embedded inside the `@font-face` declaration. Example configuration: `loader: "style!css!fontgen?embed&types=woff"`.
@@ -97,6 +109,9 @@ The prefix to be used with each icon class.
 
 - `baseClass`, String
 The base class, under which each icon class is to be crated.
+
+- `types`, Array
+Possible values are: `["svg", "eot", "wof", "ttf"]`.
 
 For additional options, see the generator's README file.
 
