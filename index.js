@@ -166,6 +166,8 @@ module.exports = function (content) {
         var hasSvg = !!~formats.indexOf('svg');
         var names = fontconf.files.map(fontconf.rename);
 
+        var reFontName = /\[fontname]/gi;
+        var reExt = /\[ext]/gi;
         for (var i in formats) {
             var format = formats[i];
             var url;
@@ -173,8 +175,8 @@ module.exports = function (content) {
             if (!embed) {
                 var filename = config.fileName || params.fileName || "[hash]-[fontname][ext]";
                 filename = filename
-                    .replace(/\[fontname]/gi, fontconf.fontName)
-                    .replace(/\[ext]/gi, format);
+                    .replace(reFontName, fontconf.fontName)
+                    .replace(reExt, format);
 
                 if (hasSvg) {
                     url = loaderUtils.interpolateName(this,
@@ -215,8 +217,8 @@ module.exports = function (content) {
             }, fontconf.templateOptions);
             var content = template(ctx);
             var htmlFileName = config.htmlFileName
-                .replace(/\[fontname]/gi, fontconf.fontName)
-                .replace(/\[ext]/gi, format);
+                .replace(reFontName, fontconf.fontName)
+                .replace(reExt, format);
             var htmlFileUrl = loaderUtils.interpolateName(this,
                 htmlFileName,
                 {
