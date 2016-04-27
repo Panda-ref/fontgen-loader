@@ -20,9 +20,11 @@
   "author": "Ingwie Phoenix <ingwie2000@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "glob": "^6.0.2",
+    "handlebars": "^4.0.5",
     "loader-utils": "^0.2.10",
-    "webfonts-generator": "^0.3.2",
-    "glob": "^6.0.2"
+    "object-assign": "^4.0.1",
+    "webfonts-generator": "^0.3.2"
   },
   "devDependencies": {
     "css-loader": "^0.15.1",

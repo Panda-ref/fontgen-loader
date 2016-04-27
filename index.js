@@ -2,8 +2,7 @@ var loaderUtils = require("loader-utils");
 var fontgen = require("webfonts-generator");
 var path = require("path");
 var glob = require('glob');
-
-var _ = require('underscore');
+var assign = require('object-assign');
 var handlebars = require('handlebars');
 var fs = require('fs');
 
@@ -210,7 +209,7 @@ module.exports = function (content) {
         if (html) {
             var source = fs.readFileSync(fontgen.templates.html, 'utf8');
             var template = handlebars.compile(source);
-            var ctx = _.extend({
+            var ctx = assign({
                 names: names,
                 fontName: fontconf.fontName,
                 styles: styles
@@ -229,7 +228,7 @@ module.exports = function (content) {
             self.emitFile(htmlFileUrl, content);
         }
 
-        if (exportModule && _.isFunction(exportModule)) {
+        if (exportModule && typeof exportModule === 'function') {
             exportModule(names);
         }
 
